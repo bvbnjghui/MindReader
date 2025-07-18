@@ -13,7 +13,7 @@ console.log(`[STARTUP] 應用程式正在啟動...`);
 console.log(`[STARTUP] 監聽埠號設定為: ${port}`);
 
 // 替換為您的 Google Apps Script 網路應用程式 URL
-const APPS_SCRIPT_WEB_APP_URL = '您的AppsScript網路應用程式URL'; // 例如: 'https://script.google.com/macros/s/AKfycbz.../exec'
+const APPS_SCRIPT_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwrRQDgd62gVWEI-oV3YGyUWf9JGmTzl2zhKn7Eh8fLViMcltJlYDq1I5a1Lu-w6k8X/exec'; // 例如: 'https://script.google.com/macros/s/AKfycbz.../exec'
 console.log(`[STARTUP] Apps Script 後端 URL: ${APPS_SCRIPT_WEB_APP_URL}`);
 
 // 配置 CORS

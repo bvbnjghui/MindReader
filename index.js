@@ -43,8 +43,9 @@ console.log(`[STARTUP_PHASE_8] JSON 解析中間件已配置。`);
 app.post('/proxy', async (req, res) => {
   console.log(`[REQUEST] 收到來自前端的請求: ${req.method} ${req.originalUrl}`);
   try {
-    const { dialog_text, context } = req.body;
-    console.log(`[REQUEST] 請求主體: dialog_text=${dialog_text ? dialog_text.substring(0, 50) + '...' : 'N/A'}, context=${context}`);
+    // 新增 previous_dialog
+    const { previous_dialog, dialog_text, context } = req.body;
+    console.log(`[REQUEST] 請求主體: previous_dialog=${previous_dialog ? previous_dialog.substring(0, 50) + '...' : 'N/A'}, dialog_text=${dialog_text ? dialog_text.substring(0, 50) + '...' : 'N/A'}, context=${context}`);
 
     if (!dialog_text) {
       console.warn(`[ERROR] 缺少 dialog_text，返回 400 錯誤。`);
@@ -57,18 +58,20 @@ app.post('/proxy', async (req, res) => {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ dialog_text, context })
+      body: JSON.stringify({
+        previous_dialog: previous_dialog, // 轉發 previous_dialog
+        dialog_text: dialog_text,
+        context: context
+      })
     });
     console.log(`[PROXY] 收到 Apps Script 響應，狀態碼: ${appsScriptResponse.status}`);
 
     // 無論 appsScriptResponse.ok 是否為 true，都先獲取原始文本內容
     const rawAppsScriptResponseText = await appsScriptResponse.text();
-    // 這裡不再限制字數，記錄完整的原始回應文本
     console.log(`[PROXY] Apps Script 原始回應文本: ${rawAppsScriptResponseText}`);
 
     if (!appsScriptResponse.ok) {
       console.error(`[ERROR] Apps Script 返回錯誤狀態碼: ${appsScriptResponse.status}, 原始錯誤內容: ${rawAppsScriptResponseText}`);
-      // 將原始錯誤內容返回給前端，以便進一步診斷
       return res.status(appsScriptResponse.status).json({
         status: 'error',
         detail: `Apps Script 錯誤 (${appsScriptResponse.status}): ${rawAppsScriptResponseText}`
@@ -81,7 +84,7 @@ app.post('/proxy', async (req, res) => {
         appsScriptData = JSON.parse(rawAppsScriptResponseText);
     } catch (jsonError) {
         console.error(`[ERROR] 無法將 Apps Script 回應解析為 JSON: ${jsonError.message}`);
-        console.error(`[ERROR] 導致解析失敗的原始文本: ${rawAppsScriptResponseText}`); // 記錄完整的原始文本
+        console.error(`[ERROR] 導致解析失敗的原始文本: ${rawAppsScriptResponseText}`);
         return res.status(500).json({
             status: 'error',
             detail: `Apps Script 回應格式錯誤，無法解析為 JSON。原始回應可能不是 JSON。`

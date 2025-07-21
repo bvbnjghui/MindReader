@@ -6,9 +6,10 @@
   "scripts": {
     "start": "node index.js"
   },
+  "type": "module",  // <-- 新增這行，將專案設定為 ESM 模組
   "dependencies": {
     "express": "^4.18.2",
-    "node-fetch": "^2.6.7",
+    "node-fetch": "^3.3.2",  // <-- 可以放心地使用最新版 node-fetch
     "cors": "^2.8.5"
   },
   "author": "",

@@ -36,20 +36,24 @@ app.use(cors({
 console.log(`[STARTUP_PHASE_7] CORS 中間件已配置。`);
 
 // Express 中間件，用於解析 JSON 請求主體
-app.use(express.json());
-console.log(`[STARTUP_PHASE_8] JSON 解析中間件已配置。`);
+app.use(express.json({ limit: '10mb' })); // 預設 1mb，增加到 10mb
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
+console.log(`[STARTUP_PHASE_8] JSON 解析中間件已配置 (限制 10MB)。`);
 
 // 處理 POST 請求的路由
 app.post('/proxy', async (req, res) => {
   console.log(`[REQUEST] 收到來自前端的請求: ${req.method} ${req.originalUrl}`);
   try {
-    // 新增 previous_dialog 和 personality_type
-    const { previous_dialog, dialog_text, context, personality_type } = req.body;
-    console.log(`[REQUEST] 請求主體: previous_dialog=${previous_dialog ? previous_dialog.substring(0, 50) + '...' : 'N/A'}, dialog_text=${dialog_text ? dialog_text.substring(0, 50) + '...' : 'N/A'}, context=${context}, personality_type=${personality_type || 'N/A'}`);
+    // 接收新的 conversation_history_text 和 uploaded_image_base64, uploaded_text_file_content
+    const { conversation_history_text, current_dialog_text, context, personality_type, uploaded_image_base64 } = req.body;
+    
+    console.log(`[REQUEST] 請求主體: conversation_history_text=${conversation_history_text ? conversation_history_text.substring(0, 50) + '...' : 'N/A'}, current_dialog_text=${current_dialog_text ? current_dialog_text.substring(0, 50) + '...' : 'N/A'}, context=${context}, personality_type=${personality_type || 'N/A'}`);
+    console.log(`[REQUEST] 檔案數據: uploaded_image_base64=${uploaded_image_base64 ? '存在 (' + uploaded_image_base64.length + '字元)' : 'N/A'}`);
 
-    if (!dialog_text) {
-      console.warn(`[ERROR] 缺少 dialog_text，返回 400 錯誤。`);
-      return res.status(400).json({ status: 'error', detail: 'Missing dialog_text in request body.' });
+    // 至少需要當前對話文本，或者有對話記錄 (文字或圖片)
+    if (!current_dialog_text && !conversation_history_text && !uploaded_image_base64) {
+      console.warn(`[ERROR] 缺少必要輸入 (current_dialog_text, conversation_history_text, uploaded_image_base64 至少一個)。`);
+      return res.status(400).json({ status: 'error', detail: 'Missing required input: please provide current dialog text, or provide conversation history (text or image).' });
     }
 
     console.log(`[PROXY] 正在轉發請求到 Apps Script: ${APPS_SCRIPT_WEB_APP_URL.substring(0, 30)}...`);
@@ -59,15 +63,15 @@ app.post('/proxy', async (req, res) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        previous_dialog: previous_dialog,
-        dialog_text: dialog_text,
+        conversation_history_text: conversation_history_text, // 轉發整合後的對話記錄文本 (包含貼上或上傳檔案的文本)
+        current_dialog_text: current_dialog_text,
         context: context,
-        personality_type: personality_type // 轉發 personality_type
+        personality_type: personality_type,
+        uploaded_image_base64: uploaded_image_base64 // 轉發 Base64 圖片數據
       })
     });
     console.log(`[PROXY] 收到 Apps Script 響應，狀態碼: ${appsScriptResponse.status}`);
 
-    // 無論 appsScriptResponse.ok 是否為 true，都先獲取原始文本內容
     const rawAppsScriptResponseText = await appsScriptResponse.text();
     console.log(`[PROXY] Apps Script 原始回應文本: ${rawAppsScriptResponseText}`);
 
@@ -79,7 +83,6 @@ app.post('/proxy', async (req, res) => {
       });
     }
 
-    // 嘗試解析為 JSON
     let appsScriptData;
     try {
         appsScriptData = JSON.parse(rawAppsScriptResponseText);

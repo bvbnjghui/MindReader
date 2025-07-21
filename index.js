@@ -63,7 +63,8 @@ app.post('/proxy', async (req, res) => {
 
     // 無論 appsScriptResponse.ok 是否為 true，都先獲取原始文本內容
     const rawAppsScriptResponseText = await appsScriptResponse.text();
-    console.log(`[PROXY] Apps Script 原始回應文本 (前500字): ${rawAppsScriptResponseText.substring(0, 500)}`);
+    // 這裡不再限制字數，記錄完整的原始回應文本
+    console.log(`[PROXY] Apps Script 原始回應文本: ${rawAppsScriptResponseText}`);
 
     if (!appsScriptResponse.ok) {
       console.error(`[ERROR] Apps Script 返回錯誤狀態碼: ${appsScriptResponse.status}, 原始錯誤內容: ${rawAppsScriptResponseText}`);
@@ -80,7 +81,7 @@ app.post('/proxy', async (req, res) => {
         appsScriptData = JSON.parse(rawAppsScriptResponseText);
     } catch (jsonError) {
         console.error(`[ERROR] 無法將 Apps Script 回應解析為 JSON: ${jsonError.message}`);
-        console.error(`[ERROR] 導致解析失敗的原始文本: ${rawAppsScriptResponseText.substring(0, 500)}`);
+        console.error(`[ERROR] 導致解析失敗的原始文本: ${rawAppsScriptResponseText}`); // 記錄完整的原始文本
         return res.status(500).json({
             status: 'error',
             detail: `Apps Script 回應格式錯誤，無法解析為 JSON。原始回應可能不是 JSON。`

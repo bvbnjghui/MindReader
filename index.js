@@ -43,9 +43,9 @@ console.log(`[STARTUP_PHASE_8] JSON 解析中間件已配置。`);
 app.post('/proxy', async (req, res) => {
   console.log(`[REQUEST] 收到來自前端的請求: ${req.method} ${req.originalUrl}`);
   try {
-    // 新增 previous_dialog
-    const { previous_dialog, dialog_text, context } = req.body;
-    console.log(`[REQUEST] 請求主體: previous_dialog=${previous_dialog ? previous_dialog.substring(0, 50) + '...' : 'N/A'}, dialog_text=${dialog_text ? dialog_text.substring(0, 50) + '...' : 'N/A'}, context=${context}`);
+    // 新增 previous_dialog 和 personality_type
+    const { previous_dialog, dialog_text, context, personality_type } = req.body;
+    console.log(`[REQUEST] 請求主體: previous_dialog=${previous_dialog ? previous_dialog.substring(0, 50) + '...' : 'N/A'}, dialog_text=${dialog_text ? dialog_text.substring(0, 50) + '...' : 'N/A'}, context=${context}, personality_type=${personality_type || 'N/A'}`);
 
     if (!dialog_text) {
       console.warn(`[ERROR] 缺少 dialog_text，返回 400 錯誤。`);
@@ -59,9 +59,10 @@ app.post('/proxy', async (req, res) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        previous_dialog: previous_dialog, // 轉發 previous_dialog
+        previous_dialog: previous_dialog,
         dialog_text: dialog_text,
-        context: context
+        context: context,
+        personality_type: personality_type // 轉發 personality_type
       })
     });
     console.log(`[PROXY] 收到 Apps Script 響應，狀態碼: ${appsScriptResponse.status}`);

@@ -1,14 +1,14 @@
-// index.js - Cloud Run Node.js 代理服務 (ESM 語法)
+// index.js - Cloud Run Node.js 代理服務
 
 console.log(`[STARTUP_PHASE_0] 腳本開始執行...`);
 
-import express from 'express'; // <-- 更改為 import
+import express from 'express';
 console.log(`[STARTUP_PHASE_1] express 模組已載入。`);
 
-import fetch from 'node-fetch'; // <-- 更改為 import
+import fetch from 'node-fetch'; // For making HTTP requests
 console.log(`[STARTUP_PHASE_2] node-fetch 模組已載入。`);
 
-import cors from 'cors'; // <-- 更改為 import
+import cors from 'cors'; // For handling CORS
 console.log(`[STARTUP_PHASE_3] cors 模組已載入。`);
 
 const app = express();
@@ -62,11 +62,13 @@ app.post('/proxy', async (req, res) => {
     console.log(`[PROXY] 收到 Apps Script 響應，狀態碼: ${appsScriptResponse.status}`);
 
     if (!appsScriptResponse.ok) {
+      // 在這裡，我們將獲取原始的錯誤文本，而不是嘗試解析為 JSON
       const errorText = await appsScriptResponse.text();
-      console.error(`[ERROR] Apps Script 返回錯誤狀態碼: ${appsScriptResponse.status}, 錯誤內容: ${errorText}`);
+      console.error(`[ERROR] Apps Script 返回錯誤狀態碼: ${appsScriptResponse.status}, 原始錯誤內容: ${errorText}`);
+      // 將原始錯誤內容返回給前端，以便進一步診斷
       return res.status(appsScriptResponse.status).json({
         status: 'error',
-        detail: `Apps Script 錯誤: ${errorText}`
+        detail: `Apps Script 錯誤 (${appsScriptResponse.status}): ${errorText}`
       });
     }
 
@@ -90,6 +92,7 @@ try {
   console.error(`[STARTUP_FAILURE] 服務器監聽埠號 ${port} 失敗: ${err.message}`, err);
   process.exit(1);
 }
+
 
 // 捕獲未處理的 Promise 拒絕和未捕獲的異常，以防止應用程式崩潰
 process.on('unhandledRejection', (reason, promise) => {

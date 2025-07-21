@@ -1,14 +1,14 @@
-// index.js - Cloud Run Node.js 代理服務
+// index.js - Cloud Run Node.js 代理服務 (ESM 語法)
 
 console.log(`[STARTUP_PHASE_0] 腳本開始執行...`);
 
-const express = require('express');
+import express from 'express'; // <-- 更改為 import
 console.log(`[STARTUP_PHASE_1] express 模組已載入。`);
 
-const fetch = require('node-fetch'); // For making HTTP requests
+import fetch from 'node-fetch'; // <-- 更改為 import
 console.log(`[STARTUP_PHASE_2] node-fetch 模組已載入。`);
 
-const cors = require('cors'); // For handling CORS
+import cors from 'cors'; // <-- 更改為 import
 console.log(`[STARTUP_PHASE_3] cors 模組已載入。`);
 
 const app = express();
@@ -20,13 +20,12 @@ const port = process.env.PORT || 8080;
 console.log(`[STARTUP_PHASE_5] 監聽埠號設定為: ${port} (來自 PORT 環境變數: ${process.env.PORT})`);
 
 // 從環境變數中讀取 Apps Script 網路應用程式 URL
-// 這是關鍵變更點
 const APPS_SCRIPT_WEB_APP_URL = process.env.APPS_SCRIPT_WEB_APP_URL;
 if (!APPS_SCRIPT_WEB_APP_URL) {
   console.error(`[STARTUP_ERROR] 環境變數 APPS_SCRIPT_WEB_APP_URL 未設定！應用程式將無法正常運行。`);
-  process.exit(1); // 退出進程，因為缺少關鍵配置
+  process.exit(1);
 }
-console.log(`[STARTUP_PHASE_6] Apps Script 後端 URL (從環境變數讀取): ${APPS_SCRIPT_WEB_APP_URL.substring(0, 30)}...`); // 避免日誌中顯示完整 URL
+console.log(`[STARTUP_PHASE_6] Apps Script 後端 URL (從環境變數讀取): ${APPS_SCRIPT_WEB_APP_URL.substring(0, 30)}...`);
 
 // 配置 CORS
 app.use(cors({
@@ -89,17 +88,16 @@ try {
   });
 } catch (err) {
   console.error(`[STARTUP_FAILURE] 服務器監聽埠號 ${port} 失敗: ${err.message}`, err);
-  process.exit(1); // 啟動失敗，退出進程讓 Cloud Run 重新啟動
+  process.exit(1);
 }
-
 
 // 捕獲未處理的 Promise 拒絕和未捕獲的異常，以防止應用程式崩潰
 process.on('unhandledRejection', (reason, promise) => {
   console.error('[UNHANDLED_REJECTION] 未處理的 Promise 拒絕:', reason);
-  process.exit(1); // 退出應用程式
+  process.exit(1);
 });
 
 process.on('uncaughtException', (err) => {
   console.error('[UNCAUGHT_EXCEPTION] 未捕獲的異常:', err);
-  process.exit(1); // 退出應用程式，讓 Cloud Run 重新啟動容器
+  process.exit(1);
 });
